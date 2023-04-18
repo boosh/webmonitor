@@ -11,20 +11,30 @@ import (
 	"strings"
 	"time"
 
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/mp3"
+	"github.com/faiface/beep/speaker"
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
 )
 
-const DELAY = 30 // delay between checks in seconds
+const DELAY = 5 // delay between checks in seconds
 
 func main() {
 	log.SetLevel(log.InfoLevel)
 
 	if len(os.Args) < 2 {
 		log.Fatal("Please provide a URL to check")
+		usage()
+		os.Exit(1)
 	}
 
 	url := os.Args[1]
+
+	mp3Path := ""
+	if len(os.Args) == 3 {
+		mp3Path = os.Args[2]
+	}
 
 	fmt.Printf("Will check URL "+url+" for changes every %ds\n", DELAY)
 
@@ -51,10 +61,17 @@ func main() {
 
 			if pageText != originalText {
 				log.Info("Web page change detected")
-				showAlert(myWindow, url)
-				println("Exiting...")
-				// todo - restart checking when the user closes the alert
-				break
+
+				go func() {
+					showAlert(myWindow, url)
+				}()
+
+				if mp3Path != "" {
+					log.Info("Playing sound")
+					playMp3(mp3Path)
+				}
+
+				myApp.Quit()
 			} else {
 				log.Infof("[%s] Page unchanged", time.Now().Format("2006-01-02 15:04:05"))
 			}
@@ -62,6 +79,43 @@ func main() {
 	}()
 
 	myWindow.ShowAndRun()
+}
+
+func usage() {
+	fmt.Println("Usage: web-monitor <URL> [MP3 file]")
+}
+
+// Play an MP3 file
+func playMp3(mp3Path string) {
+	// Open the sound file
+	file, err := os.Open(mp3Path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	// Decode the MP3 file
+	streamer, format, err := mp3.Decode(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer streamer.Close()
+
+	// Initialize the speaker with the sample rate of the MP3 file
+	err = speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Play the MP3 file and wait for it to finish
+	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+		// Close the speaker and exit when the file is finished playing
+		speaker.Close()
+		os.Exit(0)
+	})))
+
+	// Keep the program running until the audio finishes playing
+	select {}
 }
 
 func getPage(url string) string {
