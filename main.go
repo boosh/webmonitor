@@ -18,7 +18,7 @@ import (
 	"github.com/gocolly/colly/v2/extensions"
 )
 
-const DELAY = 5 // delay between checks in seconds
+const DELAY = 30 // delay between checks in seconds
 
 func main() {
 	log.SetLevel(log.InfoLevel)
