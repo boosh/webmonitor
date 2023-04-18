@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/dialog"
@@ -17,7 +18,7 @@ import (
 const DELAY = 30 // delay between checks in seconds
 
 func main() {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 
 	if len(os.Args) < 2 {
 		log.Fatal("Please provide a URL to check")
@@ -25,7 +26,7 @@ func main() {
 
 	url := os.Args[1]
 
-	println("Checking URL " + url + " for changes...")
+	fmt.Printf("Will check URL "+url+" for changes every %ds\n", DELAY)
 
 	myApp := app.New()
 	myApp.Settings().SetTheme(theme.LightTheme())
@@ -52,13 +53,10 @@ func main() {
 			if pageText != originalText {
 				log.Info("Web page change detected")
 				showAlert(myWindow, url)
+			} else {
+				log.Infof("[%s] Page unchanged", time.Now().Format("2006-01-02 15:04:05"))
 			}
 		}
-	}()
-
-	go func() {
-		time.Sleep(200 * time.Millisecond)
-		myWindow.Hide()
 	}()
 
 	myWindow.ShowAndRun()
