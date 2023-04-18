@@ -52,7 +52,7 @@ func main() {
 			if pageText != originalText {
 				log.Info("Web page change detected")
 				showAlert(myWindow, url)
-
+				println("Exiting...")
 				// todo - restart checking when the user closes the alert
 				break
 			} else {
