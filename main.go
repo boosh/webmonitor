@@ -38,7 +38,6 @@ func main() {
 
 	go func() {
 		for {
-
 			if originalText == "" {
 				originalText = getPage(url)
 				log.Debugf("Original text: %s", originalText)
@@ -53,6 +52,9 @@ func main() {
 			if pageText != originalText {
 				log.Info("Web page change detected")
 				showAlert(myWindow, url)
+
+				// todo - restart checking when the user closes the alert
+				break
 			} else {
 				log.Infof("[%s] Page unchanged", time.Now().Format("2006-01-02 15:04:05"))
 			}
