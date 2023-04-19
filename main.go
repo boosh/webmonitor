@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 	log "github.com/sirupsen/logrus"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -29,18 +32,34 @@ func main() {
 		os.Exit(1)
 	}
 
-	url := os.Args[1]
+	urlStr := os.Args[1]
 
 	mp3Path := ""
 	if len(os.Args) == 3 {
 		mp3Path = os.Args[2]
 	}
 
-	fmt.Printf("Will check URL "+url+" for changes every %ds\n", DELAY)
+	fmt.Printf("Will check URL "+urlStr+" for changes every %ds\n", DELAY)
 
 	myApp := app.New()
 	myApp.Settings().SetTheme(theme.LightTheme())
 	myWindow := myApp.NewWindow("Web Monitor")
+
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	link := widget.NewHyperlink("Checking "+urlStr+" for changes...", parsedURL)
+	statusLabel := widget.NewLabel("")
+	statusLabel.TextStyle = fyne.TextStyle{Bold: true}
+
+	content := container.NewVBox(
+		link,
+		statusLabel,
+	)
+
+	myWindow.SetContent(content)
 
 	myWindow.Resize(fyne.NewSize(300, 200))
 
@@ -49,17 +68,18 @@ func main() {
 	go func() {
 		for {
 			if originalText == "" {
-				originalText = getPage(url)
+				originalText = getPage(urlStr)
 				log.Debugf("Original text: %s", originalText)
 				continue
 			}
 
 			time.Sleep(DELAY * time.Second)
 
-			pageText := getPage(url)
+			pageText := getPage(urlStr)
 
 			if pageText == "" {
 				log.Warn("Empty page text")
+				statusLabel.SetText(fmt.Sprintf("[%s] Empty page text", time.Now().Format("2006-01-02 15:04:05")))
 				continue
 			}
 
@@ -68,8 +88,10 @@ func main() {
 			if pageText != originalText {
 				log.Info("Web page change detected")
 
+				statusLabel.SetText(fmt.Sprintf("[%s] Page has changed", time.Now().Format("2006-01-02 15:04:05")))
+
 				go func() {
-					showAlert(myWindow, url)
+					showAlert(myWindow, urlStr)
 				}()
 
 				if mp3Path != "" {
@@ -80,6 +102,7 @@ func main() {
 				myApp.Quit()
 			} else {
 				log.Infof("[%s] Page unchanged", time.Now().Format("2006-01-02 15:04:05"))
+				statusLabel.SetText(fmt.Sprintf("[%s] Page unchanged", time.Now().Format("2006-01-02 15:04:05")))
 			}
 		}
 	}()
