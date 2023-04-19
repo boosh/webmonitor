@@ -70,6 +70,7 @@ func main() {
 			if originalText == "" {
 				originalText = getPage(urlStr)
 				log.Debugf("Original text: %s", originalText)
+				statusLabel.SetText(fmt.Sprintf("[%s] Initial page retrieved", time.Now().Format("2006-01-02 15:04:05")))
 				continue
 			}
 
@@ -99,7 +100,7 @@ func main() {
 					playMp3(mp3Path)
 				}
 
-				myApp.Quit()
+				originalText = pageText
 			} else {
 				log.Infof("[%s] Page unchanged", time.Now().Format("2006-01-02 15:04:05"))
 				statusLabel.SetText(fmt.Sprintf("[%s] Page unchanged", time.Now().Format("2006-01-02 15:04:05")))
