@@ -57,6 +57,12 @@ func main() {
 			time.Sleep(DELAY * time.Second)
 
 			pageText := getPage(url)
+
+			if pageText == "" {
+				log.Warn("Empty page text")
+				continue
+			}
+
 			log.Debugf("Current text: %s", pageText)
 
 			if pageText != originalText {
@@ -145,7 +151,8 @@ func getPage(url string) string {
 	// Start the web scraping by visiting the target URL
 	err := c.Visit(url)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return ""
 	}
 
 	return pageText.String()
